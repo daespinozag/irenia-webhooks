@@ -1,37 +1,74 @@
-// Import Express.js
 const express = require('express');
-
-// Create an Express app
+const crypto = require('crypto');
 const app = express();
 
-// Middleware to parse JSON bodies
 app.use(express.json());
 
-// Set port and verify_token
-const port = process.env.PORT || 3000;
-const verifyToken = process.env.VERIFY_TOKEN;
+// VARIABLES DE ENTORNO
+const PORT = process.env.PORT || 3000;
+const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
+const PRIVATE_KEY = process.env.FLOW_PRIVATE_KEY; // Tu nueva llave privada de Render
 
-// Route for GET requests
-app.get('/', (req, res) => {
-  const { 'hub.mode': mode, 'hub.challenge': challenge, 'hub.verify_token': token } = req.query;
+// 1. VERIFICACIÓN DEL WEBHOOK (Indispensable para Meta)
+app.get('/webhook', (req, res) => {
+    const mode = req.query['hub.mode'];
+    const token = req.query['hub.verify_token'];
+    const challenge = req.query['hub.challenge'];
 
-  if (mode === 'subscribe' && token === verifyToken) {
-    console.log('WEBHOOK VERIFIED');
-    res.status(200).send(challenge);
-  } else {
-    res.status(403).end();
-  }
+    if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+        console.log('WEBHOOK_VERIFIED');
+        res.status(200).send(challenge);
+    } else {
+        res.sendStatus(403);
+    }
 });
 
-// Route for POST requests
-app.post('/', (req, res) => {
-  const timestamp = new Date().toISOString().replace('T', ' ').slice(0, 19);
-  console.log(`\n\nWebhook received ${timestamp}\n`);
-  console.log(JSON.stringify(req.body, null, 2));
-  res.status(200).end();
+// 2. PROCESAMIENTO DE MENSAJES Y FLOWS
+app.post('/webhook', async (req, res) => {
+    const body = req.body;
+
+    // --- LÓGICA DE WHATSAPP FLOWS ---
+    // Si Meta envía un 'ping' para verificar el endpoint del Flow
+    if (body.action === 'ping') {
+        return res.status(200).send({ data: { status: "active" } });
+    }
+
+    // Si el body contiene datos de un Flow (intercambio de datos)
+    if (body.decrypted_payload) {
+        try {
+            const flowData = body.decrypted_payload;
+            
+            if (flowData.screen === 'SIGN_UP') {
+                const { email, first_name } = flowData.data;
+                console.log(`Usuario registrado vía Flow: ${first_name} (${email})`);
+
+                // AQUÍ DISPARAS ELEVENLABS EN EL FUTURO
+                
+                return res.status(200).send({
+                    version: "3.0",
+                    screen: "SUCCESS",
+                    data: { extension_message_response: { params: { "status": "success" } } }
+                });
+            }
+        } catch (err) {
+            console.error("Error en el Flow:", err);
+            return res.sendStatus(500);
+        }
+    }
+
+    // --- LÓGICA DE MENSAJES NORMALES (IRENIA) ---
+    if (body.object === 'whatsapp_business_account') {
+        const message = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+        if (message) {
+            console.log(`Mensaje de ${message.from}: ${message.text?.body || 'Mensaje no textual'}`);
+            // Aquí es donde Irenia procesa el texto y responde con ElevenLabs
+        }
+        return res.status(200).send('EVENT_RECEIVED');
+    }
+
+    res.sendStatus(404);
 });
 
-// Start the server
-app.listen(port, () => {
-  console.log(`\nListening on port ${port}\n`);
+app.listen(PORT, () => {
+    console.log(`Irenia Server en puerto ${PORT}`);
 });
