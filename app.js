@@ -14,7 +14,7 @@ const decryptRequest = (body, privateKey) => {
     const { encrypted_flow_data, encrypted_aes_key, initial_vector } = body;
 
     try {
-        // 1. Descifrar la llave AES
+        // 1. Descifrar la llave AES con RSA
         const decryptedAesKey = crypto.privateDecrypt(
             {
                 key: privateKey,
@@ -24,9 +24,9 @@ const decryptRequest = (body, privateKey) => {
             Buffer.from(encrypted_aes_key, "base64")
         );
 
-        // 2. Preparar datos cifrados
+        // 2. Preparar datos cifrados (Ciphertext + Tag)
         const encryptedBuffer = Buffer.from(encrypted_flow_data, "base64");
-        const tag = encryptedBuffer.slice(-16);
+        const tag = encryptedBuffer.slice(-16); // Los últimos 16 bytes son el tag
         const ciphertext = encryptedBuffer.slice(0, -16);
 
         const decipher = crypto.createDecipheriv(
@@ -44,7 +44,7 @@ const decryptRequest = (body, privateKey) => {
             aesKeyBuffer: decryptedAesKey,
         };
     } catch (error) {
-        throw new Error("Fallo en RSA o AES-GCM: " + error.message);
+        throw new Error("Fallo en descifrado: " + error.message);
     }
 };
 
@@ -53,19 +53,17 @@ const encryptResponse = (response, aesKey, iv) => {
         const ivBuffer = Buffer.from(iv, "base64");
         const cipher = crypto.createCipheriv("aes-128-gcm", aesKey, ivBuffer);
 
-        // Convertir el JSON a string UTF-8
+        // Convertir el JSON a string UTF-8 (Sugerencia 1: Manejo robusto de encoding)
         const plaintext = JSON.stringify(response);
         
-        // Cifrar directamente
         const ciphertext = Buffer.concat([
             cipher.update(plaintext, "utf8"),
             cipher.final(),
         ]);
 
-        // Obtener el Tag (16 bytes)
         const tag = cipher.getAuthTag();
 
-        // CONCATENAR: [Ciphertext][Tag] y luego TODO a Base64
+        // Concatenar Ciphertext + Tag y pasar a Base64 (Lo que Meta espera)
         return Buffer.concat([ciphertext, tag]).toString("base64");
     } catch (error) {
         throw new Error("Error en cifrado de respuesta: " + error.message);
@@ -90,28 +88,30 @@ app.get(['/webhook', '/webhook/'], (req, res) => {
 app.post(['/webhook', '/webhook/'], async (req, res) => {
     const body = req.body;
 
+    // Health check de Meta
     if (body.action === 'ping') {
         return res.status(200).send({ data: { status: "active" } });
     }
 
     if (body.encrypted_flow_data) {
         try {
-            // Descifrado
             const { decryptedBody, aesKeyBuffer } = decryptRequest(body, PRIVATE_KEY);
-            console.log("Flow Data:", decryptedBody);
+            console.log("Datos recibidos del Flow:", decryptedBody);
 
-            // Respuesta estándar para pasar el Health Check
+            // Sugerencia 2: Payload alineado con data_api_version: "3.0"
             const responsePayload = {
-                version: "3.0",
-                screen: "SUCCESS",
+                version: "3.0", 
+                screen: "SUCCESS", // Esto cierra el flow tras el login
                 data: { 
                     extension_message_response: { 
-                        params: { "status": "completed" } 
+                        params: { 
+                            "status": "completed",
+                            "user": decryptedBody.email || "unknown" 
+                        } 
                     } 
                 }
             };
 
-            // Cifrado de respuesta (USANDO EL MISMO IV DE LA PETICIÓN)
             const encryptedResponse = encryptResponse(
                 responsePayload,
                 aesKeyBuffer,
@@ -121,8 +121,7 @@ app.post(['/webhook', '/webhook/'], async (req, res) => {
             return res.status(200).send(encryptedResponse);
 
         } catch (err) {
-            console.error("DEBUG - Error de descifrado:", err.message);
-            // Enviamos el error detallado para saber qué falla exactamente en los logs
+            console.error("ERROR CRÍTICO:", err.message);
             return res.status(500).send(`Error: ${err.message}`);
         }
     }
@@ -134,4 +133,4 @@ app.post(['/webhook', '/webhook/'], async (req, res) => {
     res.sendStatus(404);
 });
 
-app.listen(PORT, () => console.log(`Puerto: ${PORT}`));
+app.listen(PORT, () => console.log(`Servidor corriendo en puerto: ${PORT}`));
