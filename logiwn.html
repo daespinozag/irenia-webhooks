@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IRENA | Control Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: radial-gradient(circle at top right, #1e293b, #020617); min-height: 100vh; }
+        .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.08); }
+        .glass-card { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s ease; }
+        .glass-card:hover { border-color: #3b82f6; transform: translateY(-2px); }
+        .glow-text { text-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+    </style>
+</head>
+<body class="text-slate-200 font-sans selection:bg-blue-500/30">
+
+    <div id="login-screen" class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#020617]">
+        <div class="glass-panel p-10 rounded-[2.5rem] w-full max-w-md shadow-2xl text-center">
+            <div class="mb-8">
+                <div class="text-4xl font-black text-white glow-text italic tracking-tighter">IRE<span class="text-blue-500">NIA</span></div>
+                <div class="h-1 w-12 bg-blue-500 mx-auto mt-2 rounded-full"></div>
+            </div>
+            <form id="login-form" class="space-y-6">
+                <div class="relative">
+                    <input type="text" id="admin-user" required class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all placeholder:text-slate-600" placeholder="Usuario ID">
+                </div>
+                <div class="relative">
+                    <input type="password" id="admin-pass" required class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all placeholder:text-slate-600" placeholder="Código Maestro">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-blue-600/20 active:scale-95">
+                    DESBLOQUEAR TERMINAL
+                </button>
+            </form>
+		<p id="login-error" class="text-red-400 text-xs mt-6 hidden font-mono tracking-widest uppercase animate-pulse"</p><p id="login-error" class="text-red-400 text-xs mt-6 hidden font-mono tracking-widest uppercase animate-pulse"> </p>
+        </div>
+    </div>
+
+    <div id="admin-content" class="hidden flex h-screen overflow-hidden">
+        
+        <aside class="w-20 md:w-64 glass-panel m-4 rounded-[2rem] flex flex-col items-center md:items-stretch overflow-hidden">
+            <div class="p-8 text-center border-b border-white/5">
+                <div class="text-xl font-black text-white hidden md:block tracking-tighter glow-text">IRE<span class="text-blue-500 font-normal">NIA</span></div>
+                <div class="text-xl font-black text-blue-500 md:hidden italic text-center">I</div>
+            </div>
+            <nav class="flex-1 p-4 space-y-3 mt-4">
+                <a href="#" class="flex items-center gap-4 p-4 bg-blue-600/20 text-blue-400 rounded-2xl shadow-inner border border-blue-500/20">
+                    <i class="fas fa-th-large"></i> <span class="hidden md:block font-medium">Dashboard</span>
+                </a>
+                <a href="#" class="flex items-center gap-4 p-4 hover:bg-white/5 transition rounded-2xl text-slate-400">
+                    <i class="fas fa-comment-dots"></i> <span class="hidden md:block font-medium">Conversaciones</span>
+                </a>
+                <a href="#" class="flex items-center gap-4 p-4 hover:bg-white/5 transition rounded-2xl text-slate-400">
+                    <i class="fas fa-sliders-h"></i> <span class="hidden md:block font-medium">Parámetros IA</span>
+                </a>
+            </nav>
+            <div class="p-6">
+                <div class="bg-blue-500/10 p-4 rounded-2xl text-center md:text-left border border-blue-500/10">
+                    <p class="text-[10px] text-blue-400 font-bold uppercase tracking-wider hidden md:block mb-1">Status</p>
+                    <p class="text-[10px] text-slate-500">Node_Server_01</p>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 overflow-y-auto p-4 md:p-8">
+            <div class="max-w-7xl mx-auto">
+                <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+                    <div>
+                        <h1 class="text-3xl font-bold text-white glow-text tracking-tight">System Overview</h1>
+                        <p class="text-slate-500 text-sm mt-1">Monitoreo en tiempo real de Irenia App</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <div class="glass-panel px-4 py-2 rounded-xl flex items-center gap-3">
+                            <span class="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>
+                            <span class="text-xs font-bold text-emerald-500 uppercase tracking-tighter">Live Sync</span>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                    <div class="glass-card p-6 rounded-[2rem]">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="p-3 bg-blue-500/10 rounded-xl text-blue-400"><i class="fas fa-user-friends"></i></div>
+                            <span class="text-[10px] text-emerald-400 font-bold">+18%</span>
+                        </div>
+                        <h3 class="text-xs uppercase tracking-widest text-slate-500 font-bold">Pacientes Activos</h3>
+                        <p class="text-3xl font-bold text-white mt-1">1,204</p>
+                    </div>
+                    <div class="glass-card p-6 rounded-[2rem]">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="p-3 bg-purple-500/10 rounded-xl text-purple-400"><i class="fas fa-bolt"></i></div>
+                            <span class="text-[10px] text-emerald-400 font-bold">Fast</span>
+                        </div>
+                        <h3 class="text-xs uppercase tracking-widest text-slate-500 font-bold">Latencia IA</h3>
+                        <p class="text-3xl font-bold text-white mt-1">0.8s</p>
+                    </div>
+                    <div class="glass-card p-6 rounded-[2rem]">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="p-3 bg-emerald-500/10 rounded-xl text-emerald-400"><i class="fas fa-wallet"></i></div>
+                            <span class="text-[10px] text-slate-500">API Cost</span>
+                        </div>
+                        <h3 class="text-xs uppercase tracking-widest text-slate-500 font-bold">Gasto Mensual</h3>
+                        <p class="text-3xl font-bold text-white mt-1">$12.42</p>
+                    </div>
+                    <div class="glass-card p-6 rounded-[2rem]">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="p-3 bg-orange-500/10 rounded-xl text-orange-400"><i class="fas fa-microphone"></i></div>
+                        </div>
+                        <h3 class="text-xs uppercase tracking-widest text-slate-500 font-bold">Interacciones Voz</h3>
+                        <p class="text-3xl font-bold text-white mt-1">452</p>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-[2.5rem] p-8">
+                    <div class="flex justify-between items-center mb-8">
+                        <h2 class="text-xl font-bold text-white flex items-center gap-3 italic">
+                            <i class="fas fa-stream text-blue-500 not-italic"></i> Actividad Reciente
+                        </h2>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex flex-wrap items-center justify-between p-5 glass-card rounded-2xl gap-4">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-emerald-500 flex items-center justify-center text-white font-bold text-xs shadow-lg">JD</div>
+                                <div>
+                                    <p class="text-sm font-bold text-white">Juan Delgado</p>
+                                    <p class="text-[10px] text-slate-500 uppercase tracking-widest">WhatsApp ID: 59398...</p>
+                                </div>
+                            </div>
+                            <div class="flex-1 px-4 hidden md:block">
+                                <p class="text-xs text-slate-400 italic">"Me siento muy ansioso hoy, necesito consejos para dormir..."</p>
+                            </div>
+                            <div class="flex items-center gap-6">
+                                <span class="text-[10px] font-bold px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-full border border-emerald-500/20">Análisis Exitoso</span>
+                                <span class="text-xs text-slate-500 font-mono">12:45 PM</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>
